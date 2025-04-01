@@ -1,17 +1,14 @@
-export const initializeVoice = () => {
-  return new Promise((resolve) => {
-    if ('webkitSpeechRecognition' in window) {
-      const recognition = new webkitSpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      resolve(recognition);
-    } else {
-      resolve(null);
-    }
-  });
+export const initVoice = () => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+
+  const recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  return recognition;
 };
 
 export const speak = (text) => {
   const utterance = new SpeechSynthesisUtterance(text);
-  speechSynthesis.speak(utterance);
+  window.speechSynthesis.speak(utterance);
 };

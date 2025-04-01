@@ -1,26 +1,34 @@
-import { TextractClient, DetectDocumentTextCommand } from "@aws-sdk/client-textract";
+import AWS from 'aws-sdk';
 
-const client = new TextractClient({
-  region: "us-east-1",
-  credentials: {
-    accessKeyId: process.env.REACT_APP_AWS_KEY,
-    secretAccessKey: process.env.REACT_APP_AWS_SECRET
-  }
+AWS.config.update({
+  accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY,
+  secretAccessKey: process.env.REACT_APP_AWS_SECRET_KEY,
+  region: 'us-east-1'
 });
 
-export const extractIDInfo = async (file) => {
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+const textract = new AWS.Textract();
 
-  const params = { Document: { Bytes: buffer } };
-  const command = new DetectDocumentTextCommand(params);
-  const data = await client.send(command);
+export const extractText = async (file) => {
+  const params = {
+    Document: {
+      Bytes: await file.arrayBuffer()
+    }
+  };
 
-  return parseTextractData(data);
+  try {
+    const data = await textract.detectDocumentText(params).promise();
+    return parseText(data.Blocks);
+  } catch (err) {
+    console.error("OCR Error:", err);
+    throw new Error("Failed to process ID");
+  }
 };
 
-const parseTextractData = (data) => {
-  const lines = data.Blocks.filter(b => b.BlockType === "LINE").map(l => l.Text);
+const parseText = (blocks) => {
+  const lines = blocks
+    .filter(b => b.BlockType === "LINE")
+    .map(b => b.Text);
+
   return {
     firstName: lines[0] || "",
     lastName: lines[1] || "",
